@@ -1,0 +1,115 @@
+---
+title: "Sta602 Homework 4"
+author: "Dingyan Zhong"
+date: "2023-02-02"
+output: pdf_document
+---
+
+## Question 1
+### (a)
+$$
+\begin{aligned}
+  &\psi = \log\left(\frac{\theta}{1-\theta}\right)\\
+  &\Rightarrow \frac{\theta}{1-\theta} = e^{\psi}\\
+  &\Rightarrow \theta = \frac{e^{\psi}}{1+e^{\psi}}\\
+\end{aligned}
+$$
+
+
+By Change of Variables Theorem,
+$$
+\begin{aligned}
+  p_{\psi}(\psi)&= p_{\theta}\left(\frac{e^{\psi}}{1+e^{\psi}}\right) \times \left|\frac{d\frac{e^{\psi}}{1+e^{\psi}}}{d\psi}\right|\\
+  &= \frac{1}{B(a,b)}\left(\frac{e^{\psi}}{1+e^{\psi}}\right)^{a-1}\left(\frac{1}{1+e^{\psi}}\right)^{b-1}\frac{e^{\psi}}{(1+e^{\psi})^2}\\
+  &= \frac{1}{B(a,b)}\frac{e^{\psi}}{(1+e^{\psi})^{a+b}}\\
+\end{aligned}
+$$
+When a=b=1, we have
+$$
+p_{\psi}(\psi) = \frac{e^{\psi}}{(1+e^{\psi})^{2}}
+$$
+```{r}
+# Generate 10000 sample points
+range = seq(-50, 50, 0.01)
+
+#Calculate the density
+density = exp(range)/((1+exp(range))^2)
+
+#Plot
+plot(range, density, xlab = "Support", ylab = "Density", 
+     main = "Probability Density Function of Psi", 
+     type = "l", col = "blue")
+
+```
+
+### (b)
+$$
+\psi=\log(\theta) \Rightarrow \theta = e^{\psi}
+$$
+By Change of Variables Theorem,
+$$
+\begin{aligned}
+  p_{\psi}(\psi) &= \frac{b}{\Gamma(a)}(e^{\psi})^{a-1}e^{-be^{\psi}}\\
+  &= \frac{b}{\Gamma(a)}e^{a\psi-be^{\psi}}\\
+  &= e^{\psi-e^{\psi}}, \;\; given\;\; a=b=1
+\end{aligned}
+$$
+```{r}
+# Generate 10000 sample points
+range = seq(-50, 50, 0.01)
+
+#Calculate the density
+density = exp(range-exp(range))
+
+#Plot
+plot(range, density, xlab = "Support", ylab = "Density", 
+     main = "Probability Density Function of Psi", 
+     type = "l", col = "blue")
+```
+
+## Question 2
+### (a)
+```{r}
+# The function that helps generate normal-gamma random samples
+rnorm_gamma = function(n,m,c,a,b){
+  lambda = rgamma(n, a, b)
+  mu = rnorm(n, m, sqrt(1/(c*lambda)))
+  
+  return(data.frame(mu = mu, lambda = lambda))
+}
+```
+
+```{r}
+# Sample size
+N = 10^6
+spurters = rnorm_gamma(N, 24.0, 8, 4, 855.0)
+controls = rnorm_gamma(N, 11.8, 49, 24.5, 6344.0)
+```
+
+```{r}
+difference = spurters$mu-controls$mu
+cat("The approximated value is ", mean(difference>0))
+```
+The positerior probability indicates that the mean of spurters is higher than that of controls with a probability of 0.9706, which is pretty impressive. This estimate should be close to the true value because of the large sample size. We can say higher expectations from teachers have a positive influence on students' IQ.
+
+
+### (b)
+```{r}
+#Plot
+sd_spurters = 1/sqrt(spurters$lambda)
+sd_controls = 1/sqrt(controls$lambda)
+
+plot(spurters$mu, sd_spurters, 
+     xlab = "Mean change in IQ score", 
+     ylab = "Std.dev. of change",
+     col = "red",
+     pch = 24)
+points(controls$mu, sd_controls, col = "blue", pch = 21)
+legend("topleft", legend = c("spurters", "controls"), 
+       col = c("red","blue"), pch = c(24, 21))
+```
+
+We witness an obvious shift of the mean changes when comparing those two groups. A large proportion of students in the spurters group demonstrate larger changes in IQ scores than their peers in the controls group. However, there are part of the spurters group report smaller mean changes than those in controls group. Also, the standard deviations of the spurters group are notably bigger. Therefore, teachers should be cautious before expecting much from their students, even through it seems to be beneficial to the majority of them.
+
+
+
