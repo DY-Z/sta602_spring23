@@ -1,0 +1,66 @@
+---
+title: "Sta602 Assignment 3"
+author: "Dingyan Zhong"
+date: "2023/1/28"
+output: pdf_document
+---
+
+## Question 2
+The likelihood:
+$$
+p(X=x|\theta)=\frac{1}{\theta}I_{(0,\theta)}(x)
+$$
+The posterior distribution:
+$$
+\begin{aligned}
+  p(\theta|X=x) & \propto \frac{1}{\theta}I_{(0,\theta)}(x) \times \frac{\alpha\beta^{\alpha}}{\theta^{\alpha+1}}I_{(\beta,\infty)}(\theta)\\
+  &\propto \frac{1}{\theta^{\alpha+2}}I_{(0,\theta)}(x)I_{(\beta, \infty)}(\theta)\\
+  & = \frac{1}{\theta^{\alpha+2}}I_{(x, \infty)}(\theta)I_{(\beta, \infty)}(\theta)\\
+  & = \frac{1}{\theta^{\alpha+2}}I_{(max\{\beta,x\}, \infty)}(\theta)\\
+\end{aligned}
+$$
+Therefore, $\theta|X=x \sim Pareto(\alpha+1, max\{\beta, x\})$.
+
+## Question 3
+### 3.1.
+We find the posterior risk
+$$
+\begin{aligned}
+  \mathbb{E}[L(\theta,\delta(x))|X] &= c\mathbb{E}[\theta^2-2\theta\delta(x)+\delta^2(x)|X]\\
+  &= c(\mathbb{E}[\theta^2|X]-2\mathbb{E}[\theta|X]\delta(x)+\delta^2(x))
+\end{aligned}
+$$
+By taking its derivative,
+$$
+\frac{\partial \mathbb{E}[L(\theta,\delta(x))|X]}{\partial \delta(x)} = c(2\delta(x)-2\mathbb{E}[\theta|X])
+$$
+Let it be equal to zero, we have
+$$
+  \delta(x) = \mathbb{E}[\theta|X]
+$$
+The Bayes estimator is unique since $\mathbb{E}[L(\theta,\delta(x))|X]$ is convex.
+
+### 3.2.
+We obtain the posterior risk first.
+$$
+\begin{aligned}
+  \mathbb{E}[L(\theta,\delta(x))|X] &= \mathbb{E}[\omega(\theta)g^2(\theta)-2\omega(\theta)g(\theta)\delta(x)+\omega(\theta)\delta^2(x)|X]\\
+  &= \mathbb{E}[\omega(\theta)g^2(\theta)|X]-2\mathbb{E}[\omega(\theta)g(\theta)|X]\delta(x)+\mathbb{E}[\omega(\theta)|X]\delta^2(x)\\
+\end{aligned}
+$$
+Then we take derivative
+$$
+\frac{\partial \mathbb{E}[L(\theta,\delta(x))|X]}{\partial \delta (x)} = 2\mathbb{E}[\omega(\theta)|X]\delta(x)-2\mathbb{E}[\omega(\theta)g(\theta)|X]
+$$
+Let it be equal to zero, we have
+$$
+\delta(x) = \frac{\mathbb{E}[\omega(\theta)g(\theta)|X]}{\mathbb{E}[\omega(\theta)|X]}
+$$
+Then we check the second order derivative,
+$$
+\frac{\partial^2 \mathbb{E}[L(\theta,\delta(x))|X]}{\partial \delta^2 (x)} = 2\mathbb{E}[\omega(\theta)|X] > 0
+$$
+Therefore, the posterior loss is convex and $\delta(x) = \frac{\mathbb{E}[\omega(\theta)g(\theta)|X]}{\mathbb{E}[\omega(\theta)|X]}$ is unique.
+
+
+

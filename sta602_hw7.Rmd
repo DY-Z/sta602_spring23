@@ -1,0 +1,130 @@
+---
+title: "Sta602 Assignment 7"
+author: "Dingyan Zhong"
+date: "2023/4/2"
+output: pdf_document
+---
+
+# Question 1
+```{r}
+#(a)
+
+#Load the data sets
+blue = read.table(file = "https://raw.githubusercontent.com/resteorts/modern-bayes/master/homeworks/homework-7/data/bluecrab.dat")
+
+orange = read.table("https://raw.githubusercontent.com/resteorts/modern-bayes/master/homeworks/homework-7/data/orangecrab.dat")
+
+```
+
+
+```{r}
+# Function for sampling from posterior
+library("mvtnorm")
+
+sample_post = function(dataset, sample_size){
+  n = length(dataset)
+  set.seed(1)
+  # Initialize
+  theta_sample = NULL
+  sigma_sample = NULL
+  
+  #Compute prior parameters
+  y_bar = colMeans(dataset)
+  #print(y_bar)
+  mu_null = colMeans(dataset)
+  lambda_null = cov(dataset)
+  s_null = cov(dataset)
+  nu_null = 4
+  
+  sigma = s_null
+  theta = mu_null
+  for (i in 1:10000){
+    #Compute posterior parameters
+    #Update theta
+    lambda_post = solve(solve(lambda_null)+n*solve(sigma))
+    
+    mu_post = lambda_post%*%(solve(lambda_null)%*%mu_null+n*solve(sigma)%*%(y_bar))
+    theta = rmvnorm(1, mu_post, lambda_post)
+    
+    #Update sigma
+    sigma_post = s_null + (t(dataset)-c(theta))%*%t(t(dataset)-c(theta))
+    
+    sigma = solve(rWishart(1, nu_null+n, solve(sigma_post))[,,1])
+    
+    theta_sample = rbind(theta_sample, theta)
+    sigma_sample = rbind(sigma_sample, sigma)
+    
+  }
+  
+  return (list(theta_sample, sigma_sample))
+}
+
+```
+
+
+```{r}
+# (b)
+blue_sample = sample_post(blue, 10000)
+blue_theta = blue_sample[1]
+blue_theta = matrix(unlist(blue_theta), ncol = 2)
+blue_theta_1 = blue_theta[,1]
+blue_theta_2 = blue_theta[,2]
+
+plot(blue_theta_1, blue_theta_2, main = "Bluecrab Average Rear Width v.s. Average Body Depth",
+     xlab = "Average Body Depth", ylab = "Average Rear Width")
+```
+
+```{r}
+orange_sample = sample_post(orange, 10000)
+orange_theta = orange_sample[1]
+orange_theta = matrix(unlist(orange_theta), ncol = 2)
+orange_theta_1 = orange_theta[,1]
+orange_theta_2 = orange_theta[,2]
+
+plot(orange_theta_1, orange_theta_2, main = "Orangecrab Average Rear Width v.s. Average Body Depth",
+     xlab = "Average Body Depth", ylab = "Average Rear Width")
+
+```
+
+The ranges of average body depth and average rear width of orange crabs are wider than those those of blue crabs. Also, the plot for orange carbs seems to be more dense, indicating a larger correlation between those two variables.
+
+```{r}
+# (c)
+blue_sigma = blue_sample[2]
+blue_sigma = matrix(unlist(blue_sigma), ncol = 2)
+
+blue_cor = rep(0, 10000)
+
+for (i in 1:10000){
+  # rho = cov(x,y)/sqrt(var(x)*var(y))
+  blue_cor[i] = blue_sigma[2*i, 1]/sqrt(blue_sigma[2*i-1,1]*blue_sigma[2*i,2])
+  
+}
+
+plot(density(blue_cor), main = "Posterior Density of Rho_blue", xlab = "Support")
+
+```
+
+```{r}
+orange_sigma = orange_sample[2]
+orange_sigma = matrix(unlist(orange_sigma), ncol = 2)
+
+orange_cor = rep(0, 10000)
+
+for (i in 1:10000){
+  orange_cor[i] = orange_sigma[2*i, 1]/sqrt(orange_sigma[2*i-1,1]*orange_sigma[2*i,2])
+}
+
+plot(density(orange_cor), main = "Posterior Density of Rho_orange", xlab = "Support")
+```
+
+```{r}
+# evaluate the difference
+difference = blue_cor-orange_cor
+prob_smaller = mean(difference<0)
+cat("The probability that rho_blue < rho_orange is", prob_smaller)
+```
+
+The result suggests that the correlation coefficient between average body depth and rear width of blue crabs is smaller than that of orange crabs almost surely, given the data provided in the problem description.
+
+

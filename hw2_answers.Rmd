@@ -1,0 +1,208 @@
+---
+title: "Sta602 23sp Hw2"
+author: "Dingyan Zhong"
+date: "2023/1/16"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1
+### Question 1.1.
+```{r}
+# sample simulation
+set.seed(123)
+observe = rbinom(n = 100, size = 1, prob = 0.01)
+
+# theta values
+thetaValues = seq(0, 1, length.out = 1000)
+
+# calculate bernoulli LH
+like = rep(0, 1000)
+numOne = sum(observe)
+numZero = length(observe)-numOne
+
+for (i in 1:1000){
+  theta = thetaValues[i]
+  like[i] = theta^numOne*(1-theta)^numZero
+}
+
+# A grid plot for (theta, LH) pairs
+plot(x = thetaValues, y= like, main = "Bernoulli Likelihood for Different Theta Values", xlab = "Theta", ylab = "Likelihood")
+grid()
+```
+
+### Question 1.2.
+We notice that the posterior of the Beta-Bernoulli model is $Beta(x+a, n-x+b)$, where n is the sample size while x is the number of 1's in the sample. In this question, we re-use the sample generated in part 1.
+```{r}
+# A function for calculating the posterior parameters for the Beta-Bernoulli model
+postPara = function(a, b, observe){
+  numOne = sum(observe)
+  numZero = length(observe)-numOne
+  
+  return(c(numOne+a, numZero-b))
+}
+
+# vector to store posterior parameters
+para = matrix(c(0,0,0,0), nrow = 2)
+
+#non-informative
+para[1,] = postPara(1,1,observe)
+#informative
+para[2,] = postPara(3,1,observe)
+
+cat("The non-informative case: ", "a_post = ", para[1,1], " b_post = ", para[1,2], ".\n")
+cat("The informative case: ", "a_post = ", para[2,1], " b_post = ", para[2,2], ".\n")
+
+```
+### Question 1.3.
+```{r}
+# Use xpd = F to avoid plotting the bars below the axis
+barplot(para[1,], las = 1, col = "black", ylim = c(0, 90), xpd = F, main = "Non-informative Parameters", names.arg = c("a", "b"), yaxt = "n")
+par(new = T)
+# Plot the new data with a different ylim, but don't plot the axis
+barplot(c(1,1), las = 1, col = "white", ylim = c(0, 90), yaxt = "n")
+
+```
+```{r}
+# Use xpd = F to avoid plotting the bars below the axis
+barplot(para[2,], las = 1, col = "black", ylim = c(0, 90), xpd = F, main = "Informative Parameters", names.arg = c("a", "b"), yaxt = "n")
+par(new = T)
+# Plot the new data with a different ylim, but don't plot the axis
+barplot(c(1,3), las = 1, col = "white", ylim = c(0, 90), yaxt = "n")
+
+```
+We can observe from the plots that $b_{post}$ remains the same in informative and non-informative cases. But $a_{post}$ changes more in the informative case.
+
+# Question 2
+### Question 2.1.
+
+$$
+\begin{aligned}
+  p(\theta|x_{1:n}) &\propto p(x_{1:n}|\theta)p(\theta)\\
+  &= \left(\prod_{i=1}^{n}\theta e^{-\theta x_i}\right)\frac{b^a}{\Gamma(a)}\theta^{a-1}e^{-b\theta}\\
+  &\propto \theta^{a+n-1}e^{-(b+\sum_{i=1}^nx_i)\theta}
+\end{aligned}
+$$
+The posterior is a Gamma distribution, which means
+$$p(\theta|x_{1:n})=Gamma(\theta|a+n, b+\sum_{i=1}^nx_i)$$
+
+### Question 2.2.
+Based on the derivation in part (a), the posterior has the same shape as the gamma density. We also know that the posterior and the gamma density both integrate to 1, which means that they have the same scale. Therefore, the posterior and the gamma density are exactly the same distribution
+
+### Question 2.3.
+```{r}
+prior_para = c(0.1,1.0)
+data = c(20.9, 69.7, 3.6, 21.8, 21.4, 0.4, 6.7, 10.0)
+post_para = prior_para + c(length(data), sum(data))
+```
+
+```{r}
+# Generate random samples
+prior_sample = data.frame(rgamma(10000, prior_para[1], prior_para[2]))
+post_sample = data.frame(rgamma(10000, post_para[1], post_para[2]))
+
+dat <- data.frame(prior_gamma = prior_sample, post_gamma = post_sample)
+```
+
+```{r}
+# Fit and plot the p.d.f.
+dens <- apply(dat, 2, density)
+
+plot(NA, xlim=c(0,2), ylim=range(sapply(dens, "[", "y")), xlab = "Support", ylab = "Density")
+
+# This line may lead to outputs in the console.
+mapply(lines, dens, col=1:length(dens))
+
+legend("topright", legend=c("Prior", "Posterior"), fill=1:length(dens))
+```
+
+### Question 3.4.
+Exponential distributions can be used to model the waiting time in a Poisson process, for example, the time between customers' arrivals at a restaurant. But we may not apply exponential models to processes which are not Poisson, for example, the time between two earthquakes.
+
+# Question 3
+
+### Question 3.1.
+$\theta$ may follow a Galenshore distribution, i.e., $\theta \sim Galenshore(c,d)$.
+\\
+\\
+\textit{Justification:}\\
+$$
+\begin{aligned}
+  p(\theta |y_{1:n}) &\propto \left(\prod_{i=1}^n\frac{2}{\Gamma(a)}\theta^{2a}y_i^{2a-1}e^{-\theta^2y_i^2}\right)\frac{2}{\Gamma(c)}d^{2c}\theta^{2c-1}e^{-d\theta^2}\\
+  &\propto \theta^{2an+2c-1}e^{-\theta^2(d^2+\sum_{i=1}^ny_i^2)}
+\end{aligned}
+$$
+Hence, the posterior is also a Galenshore distribution, which is $Galenshore(an+c, \sqrt{d^2+\sum_{i=1}^ny_i^2})$. Here are some examples.
+
+```{r}
+# Define galenshore density.
+galenshore <- function(a, theta, y){
+  prob <- (2/factorial(a-1)) * theta^(2*a) * y ^ (2*a - 1) * exp((-(theta^2 * y ^ 2)))
+  return(prob)
+}
+# Step size & sample size
+y <- seq(0, 5, length.out = 100)
+
+# Generate random samples
+one <- data.frame(density = galenshore(1,1, y), type = "galenshore(1,1)")
+two <- data.frame(density = galenshore(2,1,y), type = "galenshore(2,1)")
+three <- data.frame(density = galenshore(1,2,y), type = "galenshore(1,2)")
+four <- data.frame(density = galenshore(4,2,y), type = "galenshore(4,2)")
+
+# Combine samples
+densities <- rbind(one, two, three, four)
+# Match values of the random variables
+yvalues <- rep(y, 4)
+
+data <- data.frame(yvalues = yvalues, densities)
+
+
+library(ggplot2)
+#Plot the fitted curves
+g = ggplot(data, aes(x = yvalues, y = density, group = type, color  = type)) + geom_line() + xlab("Support")
+g
+```
+
+### Question 3.2.
+Let c = 1 and d = 2, we have
+$$
+\begin{aligned}
+  p(\theta |y_{1:n}) = \frac{2}{an+1}(4+\sum_{i=1}^ny_i^2)^{2(an+c)}\theta^{2(an+c)-1}e^{-(4+\sum_{i=1}^ny_i^2)^2\theta^2}
+\end{aligned}
+$$
+
+### Question 3.3.
+$$
+\begin{aligned}
+  \frac{p(\theta_a|y_{1:n})}{p(\theta_b|y_{1:n})} &= \frac{\theta_a^{2an+2c-1}e^{-\theta_a^2(d^2+\sum_{i=1}^ny_i^2)}}{\theta_b^{2an+2c-1}e^{-\theta_b^2(d^2+\sum_{i=1}^ny_i^2)}} \\
+  &= \left(\frac{\theta_a}{\theta_b}\right)^{2(an+c)-1}e^{(\theta_b^2-\theta_a^2)(d^2+\sum_{i=1}^ny_i^2)}
+\end{aligned}
+$$
+A sufficient statistic can be $\sum_{i=1}^n=y_i^2$, which can be justified by Factorization Theorem immediately.
+
+### Question 3.4.
+$$
+\begin{aligned}
+  \mathbb{E}[\theta|y_{1:n}] &= \int_{\theta}\theta p(\theta|y_{1:n})d\theta\\
+  &= \int_{\theta}\theta \frac{2}{\Gamma(an+c)}\theta^{2an+2c-1}(d^2+\sum_{i=1}^ny_i^2)^{2(an+c)}e^{-\theta^2(d^2+\sum_{i=1}^ny_i^2)}d\theta\\
+  &= \frac{\Gamma(an+c+1/2)}{\sqrt{(d^2+\sum_{i=1}^ny_i^2)}\Gamma(an+c)}
+\end{aligned}
+$$
+
+### Question 3.5.
+$$
+\begin{aligned}
+  p(y_{n+1}|y_{1:n}) &= \int p(y_{n+1}|\theta)p(\theta|y_{1:n})d\theta\\
+  &= \int \frac{2}{\Gamma(a)}\theta^{2a}y_{n+1}^{2a-1}e^{-\theta y_{n+1}^2}\frac{2}{\Gamma(an+c)}\theta^{2an+2c-1}(d^2+\sum_{i=1}^ny_i^2)^{2(an+c)}e^{-\theta^2(d^2+\sum_{i=1}^ny_i^2)}d\theta\\
+  &= \frac{4}{\Gamma(a)\Gamma(an+c)}\times \frac{\Gamma(an+a+c)}{2}
+  y_{n+1}^2\frac{(d^2+\sum_{i=1}^ny_i^2)^{2(an+c)}}{(d^2+\sum_{i=1}^ny_i^2+y_{n+1}^2)^{an+a+c}}\\
+  &\times\int \frac{2}{\Gamma(an+a+c)}\theta^{2(an+a+c)-1}(d^2+\sum_{i=1}^ny_i^2+y_{n+1}^2)^{an+a+c}e^{-\theta^2(d^2+\sum_{i=1}^ny_i^2+y_{n+1}^2)}d\theta\\
+  &= \frac{2 y_{n+1}^{2a - 1} \Gamma(an + a + c)}{\Gamma(a)\Gamma(an + c)}
+\frac{(d^2 + \sum y_i^2)^{an + c}}{(d^2 + \sum y_i^2 + y_{n+1}^2)^{(an + a + c)}}
+\end{aligned}
+$$
+
+
